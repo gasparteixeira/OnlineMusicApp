@@ -2,10 +2,12 @@ import React, { Component } from 'react';
 import { View, Text, Image, FlatList } from 'react-native';
 import { List, ListItem } from "react-native-elements";
 import axios from 'axios';
+import Expo, { Audio } from 'expo';
 
 class ArtistDetail extends Component {
 
-  state = { tracks : null, error: null}
+  soundObject = new Expo.Audio.Sound();
+  state = { tracks : null, error: null, isPlaying: false, trackId: null}
 
  componentDidMount() {
    axios.defaults.headers.common['Authorization'] = `Bearer ${this.props.token}`;
@@ -34,11 +36,25 @@ class ArtistDetail extends Component {
     )
   };
 
-  onPlayTrack(track) {
 
-    console.log(track.name);
 
-  }
+  playSound = async (track) => {
+    console.log('preview_url', track.preview_url);
+     if(this.state.isPlaying) {
+       await this.soundObject.stopAsync();
+       await this.soundObject.unloadAsync();
+       this.setState({isPlaying : false, trackId: null});
+     }
+      try {
+          await this.soundObject.loadAsync({ uri: track.preview_url });
+          await this.soundObject.playAsync();
+
+          this.setState({isPlaying : true, trackId: track.id});
+        } catch (error) {
+          // An error occurred!
+          console.log('error', error);
+        }
+  };
 
 
 
@@ -51,12 +67,12 @@ class ArtistDetail extends Component {
             data={this.state.tracks}
             renderItem={({ item }) => (
               <ListItem
-                  onPress={() => {this.onPlayTrack(item)}}
+                  onPress={() => {this.playSound(item)}}
                   roundAvatar
                   title={`${item.name}`}
                   subtitle={item.duration_ms}
                   avatar={{ uri: 'https://image.flaticon.com/icons/png/128/117/117999.png' }}
-                  containerStyle={styles.trackContainer}
+                  containerStyle={(this.state.trackId != null) ? styles.trackContainerPlaying : styles.trackContainer}
                 />
             )}
             keyExtractor={item => item.id}
@@ -87,6 +103,10 @@ const styles = {
   trackContainer: {
     borderBottomWidth: 0,
     backgroundColor: '#000'
+  },
+  trackContainerPlaying: {
+    borderBottomWidth: 0,
+    backgroundColor: '#eee'
   },
   separator: {
       height: 1,
