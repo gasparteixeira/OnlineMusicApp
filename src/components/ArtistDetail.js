@@ -1,13 +1,21 @@
 import React, { Component } from 'react';
 import { View, Text, Image, FlatList } from 'react-native';
-import { List, ListItem } from "react-native-elements";
+import { List, ListItem, Icon } from "react-native-elements";
 import axios from 'axios';
 import Expo, { Audio } from 'expo';
+
 
 class ArtistDetail extends Component {
 
   soundObject = new Expo.Audio.Sound();
-  state = { tracks : null, error: null, isPlaying: false, trackId: null}
+  state = {
+    tracks : null,
+    error: null,
+    isPlaying: false,
+    trackId: null,
+    playIcon: 'https://png.icons8.com/circled-play/ios7/50',
+    pauseIcon: 'https://png.icons8.com/stop/ios7/50'
+  }
 
  componentDidMount() {
    axios.defaults.headers.common['Authorization'] = `Bearer ${this.props.token}`;
@@ -20,6 +28,10 @@ class ArtistDetail extends Component {
      .catch(error => {
        console.log('error', error);
      });
+ }
+
+ componentWillUnmount() {
+   this.stopSound();
  }
 
   renderPhoto(artist) {
@@ -48,17 +60,23 @@ class ArtistDetail extends Component {
       try {
           await this.soundObject.loadAsync({ uri: track.preview_url });
           await this.soundObject.playAsync();
-
-          this.setState({isPlaying : true, trackId: track.id});
+          this.setState({isPlaying : true, trackId: track.id });
         } catch (error) {
-          // An error occurred!
           console.log('error', error);
         }
   };
 
+  stopSound = async () => {
+    if(this.state.isPlaying) {
+      await this.soundObject.stopAsync();
+      await this.soundObject.unloadAsync();
+    }
+  }
+
 
 
   render() {
+    console.log('navegacao', this.props.navigation);
     return (
       <View style={styles.container}>
           <Image source={{uri : this.renderPhoto(this.props.artist)}} style={styles.imageStyle} />
@@ -71,11 +89,12 @@ class ArtistDetail extends Component {
                   roundAvatar
                   title={`${item.name}`}
                   subtitle={item.duration_ms}
-                  avatar={{ uri: 'https://image.flaticon.com/icons/png/128/117/117999.png' }}
-                  containerStyle={(this.state.trackId != null) ? styles.trackContainerPlaying : styles.trackContainer}
+                  avatar={this.state.isPlaying && this.state.trackId == item.id ? { uri: this.state.pauseIcon } : { uri: this.state.playIcon }}
+                  hideChevron
                 />
             )}
             keyExtractor={item => item.id}
+            extraData={this.state}
             ItemSeparatorComponent={this.renderSeparator}
             refreshing={this.state.refreshing}
           />
@@ -83,6 +102,7 @@ class ArtistDetail extends Component {
     )
   }
 }
+
 
 const styles = {
   container: {

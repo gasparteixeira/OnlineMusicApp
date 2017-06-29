@@ -22,7 +22,7 @@ class AlbumScreen extends Component {
   render() {
     const { params } = this.props.navigation.state;
     return (
-      <ArtistDetail artist={params.artist}  token={params.token}/>
+      <ArtistDetail artist={params.artist} navigation={this.props.navigation}  token={params.token}/>
     )
   }
 };
