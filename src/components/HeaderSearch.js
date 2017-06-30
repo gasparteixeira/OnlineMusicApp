@@ -13,6 +13,7 @@ class HeaderSearch extends Component {
             returnKeyType='search'
             onChangeText={(text) => this.setState({text})}
             onSubmitEditing={() => this.props.onSubmitingSearch(this.state.text)}
+            underlineColorAndroid='transparent'
           />
      </View>
      )
@@ -33,7 +34,7 @@ const styles = {
     paddingHorizontal: 8,
     fontSize: 15,
     backgroundColor: '#FFFFFF',
-    borderRadius: 2,
+    borderRadius: 2
   },
 }
 

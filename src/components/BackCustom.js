@@ -13,14 +13,14 @@ class BackCustom extends Component {
   render() {
     return(
       <TouchableOpacity style={styles.buttonStyle} onPress={this.execute} >
-         <Ionicons name="ios-arrow-back" size={32} color="#999" />
+         <Ionicons name="ios-arrow-back" size={36} color="#999" />
     </TouchableOpacity>
     )
   }
 }
 const styles = {
   buttonStyle: {
-    marginLeft: 10
+    left: 15
   }
 }
 export default BackCustom;
