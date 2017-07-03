@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { FlatList, View, ActivityIndicator, Navigator} from 'react-native';
+import { FlatList, View, ActivityIndicator, Navigator, Text, Alert} from 'react-native';
 import { List, ListItem } from "react-native-elements";
 import axios from 'axios';
 import HeaderSearch from '../components/HeaderSearch';
@@ -9,7 +9,9 @@ class MainScreen extends Component {
   state = {
       text: '',
       loading: false,
+      status: '',
       albums: [],
+      result: -1,
       page: 1,
       seed: 1,
       error: null,
@@ -21,10 +23,15 @@ class MainScreen extends Component {
     title: 'Find an Artist',
   };
 
-    componentDidMount  () {
+  componentDidMount  () {
+    this.getTheToken();
+
+  }
+
+  getTheToken() {
     const client = encodeURIComponent('client_credentials');
     const requestBody = `grant_type=${client}`;
-    this.setState({ loading: true });
+    this.setState({ loading: true, status: 'cheking api access' });
     fetch('https://accounts.spotify.com/api/token', {
       mode: 'no-cors',
       method: 'post',
@@ -36,28 +43,43 @@ class MainScreen extends Component {
       body: requestBody
         }).then((response) => response.json())
           .then((responseJson) => {
-            this.setState({spotifyToken: responseJson.access_token})
+            this.setState({spotifyToken: responseJson.access_token, loading: false, status: ''})
         }).catch((error) => {
-          this.setState({ error, loading: false });
+          this.setState({ error, loading: false, status: ''});
         })
-
   }
 
   onSubmitingSearch (value) {
-    this.setState({ loading: true });
+    this.setState({albums: [], loading: true, status: `searging for ${value}` });
     axios.defaults.headers.common['Authorization'] = `Bearer ${this.state.spotifyToken}`;
     axios.get('https://api.spotify.com/v1/search', {
       params: { q: value, type: 'artist' }
     }).then(response => {
           this.setState({
             albums: response.data.artists.items,
+            result: response.data.artists.items.length,
             error: response.error || null,
             loading: false,
+            status: '',
             refreshing: false
           })
+          if(response.data.artists.items.length == 0) {
+            Alert.alert(
+              'Opps.. something got wrong',
+              `There was no result by the name ${value}. Try again.`,
+            );
+          }
       })
       .catch(error => {
-        this.setState({ error, loading: false });
+        if(error.response.status == 401){
+          this.getTheToken();
+          Alert.alert(
+            'Opps.. session started',
+            `Try again.`,
+          );
+        }
+        this.setState({ error, loading: false, status: '' });
+
       });
   }
 
@@ -75,9 +97,20 @@ class MainScreen extends Component {
     )
   };
 
+  renderFooter = () => {
+    if (!this.state.loading) return null;
+    return (
+      <View style={{paddingVertical: 20, borderTopWidth: 1,borderColor: '#CED0CE'}} >
+          <ActivityIndicator animating size='large'/>
+          <Text style={styles.statusStyle}>{this.state.status}</Text>
+      </View>
+    )
+  }
+
 
   render() {
     const { navigate } = this.props.navigation;
+
     return (
       <FlatList
         data={this.state.albums}
@@ -94,6 +127,7 @@ class MainScreen extends Component {
         keyExtractor={item => item.id}
         ItemSeparatorComponent={this.renderSeparator}
         ListHeaderComponent={() => <HeaderSearch callbackParent={(newState) => this.onChildChanged(newState)} onSubmitingSearch={(value) => this.onSubmitingSearch(value)} />}
+        ListFooterComponent={this.renderFooter}
         refreshing={this.state.refreshing}
       />
     )
@@ -109,6 +143,11 @@ const styles = {
       height: 1,
       width: "100%",
       backgroundColor: "#CED0CE",
+  },
+  statusStyle: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    alignSelf: 'center',
   }
 };
 

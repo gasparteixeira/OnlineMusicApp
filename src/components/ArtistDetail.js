@@ -51,7 +51,12 @@ class ArtistDetail extends Component {
 
 
   playSound = async (track) => {
-    console.log('preview_url', track.preview_url);
+     if(this.state.isPlaying && this.state.trackId == track.id) {
+       await this.soundObject.stopAsync();
+       await this.soundObject.unloadAsync();
+       this.setState({isPlaying : false, trackId: null});
+       return null;
+     }
      if(this.state.isPlaying) {
        await this.soundObject.stopAsync();
        await this.soundObject.unloadAsync();
@@ -86,6 +91,7 @@ class ArtistDetail extends Component {
             renderItem={({ item }) => (
               <ListItem
                   onPress={() => {this.playSound(item)}}
+                  style={item.preview_url ? styles.activeSong : styles.inactiveSong}
                   roundAvatar
                   title={`${item.name}`}
                   subtitle={item.duration_ms}
@@ -132,6 +138,14 @@ const styles = {
       height: 1,
       width: "100%",
       backgroundColor: "#ccc",
+  },
+  activeSong: {
+    opacity: 1,
+    padding: 5,
+  },
+  inactiveSong: {
+    opacity: .5,
+    padding: 5,
   }
 }
 
